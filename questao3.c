@@ -7,9 +7,7 @@
 void *escritor(void *arg);
 void *leitor(void *arg);
 
-sem_t area;
-sem_t cont;
-sem_t escritorLock;
+sem_t mutex;
 
 int leitores = 0;
 int escritores = 0;
@@ -17,16 +15,14 @@ int escritores = 0;
 
 int main(void) {
 
-  sem_init(&area, 0, 1);
-  sem_init(&cont, 0, 1);
-  sem_init(&escritorLock, 0, 1);
+  sem_init(&mutex, 0, 1);
 
   int num_produtor, num_consumidor;
 
-  printf("Digite o numero de produtores: ");
+  printf("Digite o numero de leitores: ");
   scanf("%d", &num_produtor);
 
-  printf("Digite o numero de consumidores: ");
+  printf("Digite o numero de escitores: ");
   scanf("%d", &num_consumidor);
 
   pthread_t threads1_id[num_produtor];
@@ -52,9 +48,7 @@ int main(void) {
     pthread_join(threads2_id[i], NULL);
   }
 
-  sem_destroy(&area);
-  sem_destroy(&cont);
-  sem_destroy(&escritorLock);
+  sem_destroy(&mutex);
 
   return 0;
 }
@@ -64,29 +58,17 @@ void *escritor(void *arg) {
   int escritorAtual = *((int *)arg);
   free(arg);
 
-  while (1) {
-
-    sem_wait(&escritorLock);
+  for (int i=0; i<5000; i++) {
     
+    sem_wait(&mutex);
     escritores++;
     
-    if(escritores == 1){
-      sem_wait(&area);
-    }
-    
-    sem_post(&escritorLock);
-
-    printf("Escritor %d esta escrevendo...%d\n", escritorAtual, escritores);
+    printf("Escritor %d escrevendo...%d\n", escritorAtual, escritores);
     sleep(1);
     
-
-    sem_wait(&escritorLock);  
     escritores--;
-    if (escritores == 0){
-      sem_post(&area);
-    }
-    sem_post(&escritorLock);
-
+    
+    sem_post(&mutex);
     sleep(1);
     
   }
@@ -97,36 +79,21 @@ void *leitor(void *arg) {
   int leitorAtual = *((int *)arg);
   free(arg);
 
-  while (1) {
-    
-    sem_wait(&cont);
+  for (int i=0; i<5000; i++) {
 
-    while (escritores > 0){
-      sem_post(&cont);
-      sleep(1);
-      sem_wait(&cont);
-    }
+    sem_wait(&mutex);
     
+    if (escritores > 0){
+      sem_post(&mutex);
+    }
     leitores++;
-
-    if (leitores == 1) {
-      sem_wait(&area);
-    }
-
-    sem_post(&cont);
 
     printf("Leitor %d lendo...%d\n", leitorAtual, leitores);
     sleep(1);
 
-    sem_wait(&cont);
-
     leitores--;
-
-    if (leitores == 0) {
-      sem_post(&area);
-    }
-
-    sem_post(&cont);
+    sem_post(&mutex);
     sleep(1);
+
   }
 }
