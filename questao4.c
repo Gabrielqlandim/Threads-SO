@@ -26,7 +26,7 @@ void *escritores(void *args)
     int *id = (int *)args;
     free(args);
     for(int i=0; i<5000; i++){
-        pthread_rwlock_wdlock(&rwlock);
+        pthread_rwlock_wrlock(&rwlock);
         escritor++;
         printf("Escritor %d esta escrevendo\n", *id);
         pthread_rwlock_unlock(&rwlock);
